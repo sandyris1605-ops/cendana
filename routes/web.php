@@ -1,0 +1,80 @@
+<?php
+
+use App\Http\Controllers\Admin\AssetController;
+use App\Http\Controllers\Admin\BarcodeController;
+use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\EmployeeController;
+use App\Http\Controllers\Admin\ExpenseController;
+use App\Http\Controllers\Admin\GudangController;
+use App\Http\Controllers\Admin\ItemController;
+use App\Http\Controllers\Admin\PurchaseController;
+use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\Admin\RoomController;
+use App\Http\Controllers\Admin\SaldoKasController;
+use App\Http\Controllers\Admin\SearchController;
+use App\Http\Controllers\Admin\SettingController;
+use App\Http\Controllers\Admin\SupplierController;
+use App\Http\Controllers\Admin\TenancyController;
+use App\Http\Controllers\Admin\TenantController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\FrontController;
+use Illuminate\Support\Facades\Route;
+
+Route::get('/', [FrontController::class, 'home'])->name('home');
+Route::get('/kamar', [FrontController::class, 'kamar'])->name('kamar');
+Route::post('/booking', [FrontController::class, 'booking'])->middleware('throttle:6,1')->name('booking.store');
+Route::get('/scan/{kode}', [BarcodeController::class, 'scan'])->name('scan');
+
+Route::get('/login', [AuthController::class, 'login'])->name('login');
+Route::post('/login', [AuthController::class, 'doLogin'])->middleware('throttle:5,1')->name('login.do');
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+Route::prefix('admin')->name('admin.')->middleware(['auth','admin'])->group(function () {
+    Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('cari', [SearchController::class, 'cari'])->name('cari');
+    Route::resource('rooms', RoomController::class);
+    Route::resource('items', ItemController::class);
+    Route::get('penggantian', [AssetController::class, 'penggantian'])->name('penggantian');
+    Route::get('penyusutan', [AssetController::class, 'penyusutan'])->name('penyusutan');
+    Route::post('penyusutan/hitung', [AssetController::class, 'hitungPenyusutan'])->name('penyusutan.hitung');
+    Route::post('assets/{asset}/pasang', [AssetController::class, 'pasang'])->name('assets.pasang');
+    Route::post('assets/{asset}/lepas', [AssetController::class, 'lepas'])->name('assets.lepas');
+    Route::post('assets/{asset}/tandai-ganti', [AssetController::class, 'tandaiGanti'])->name('assets.tandai-ganti');
+    Route::post('assets/{asset}/selesai-ganti', [AssetController::class, 'selesaiGanti'])->name('assets.selesai-ganti');
+    Route::post('assets/{asset}/perbaiki', [AssetController::class, 'perbaiki'])->name('assets.perbaiki');
+    Route::post('assets/{asset}/buang', [AssetController::class, 'buang'])->name('assets.buang');
+    Route::resource('assets', AssetController::class)->only(['index','show']);
+    Route::resource('purchases', PurchaseController::class)->except(['edit','update']);
+    Route::get('gudang', [GudangController::class, 'index'])->name('gudang.index');
+    Route::post('gudang/transfer', [GudangController::class, 'transfer'])->name('gudang.transfer');
+    Route::get('saldo-kas', [SaldoKasController::class, 'index'])->name('saldo-kas.index');
+    Route::post('saldo-kas/topup', [SaldoKasController::class, 'topup'])->name('saldo-kas.topup');
+    Route::delete('saldo-kas/topup/{topup}', [SaldoKasController::class, 'destroyTopup'])->name('saldo-kas.topup.destroy');
+    Route::resource('expenses', ExpenseController::class)->except(['show']);
+    Route::resource('tenants', TenantController::class);
+    Route::resource('tenancies', TenancyController::class)->only(['index','show','destroy']);
+    Route::post('tenancies/{tenancy}/pindah', [TenancyController::class, 'pindah'])->name('tenancies.pindah');
+    Route::resource('employees', EmployeeController::class)->except(['show']);
+    Route::resource('suppliers', SupplierController::class);
+    Route::get('barcode', [BarcodeController::class, 'index'])->name('barcode.index');
+    Route::get('barcode/cetak', [BarcodeController::class, 'cetak'])->name('barcode.cetak');
+    Route::get('laporan', [ReportController::class, 'index'])->name('laporan.index');
+    Route::get('laporan/{jenis}/pdf', [ReportController::class, 'pdf'])->name('laporan.pdf');
+    Route::get('laporan/{jenis}/csv', [ReportController::class, 'csv'])->name('laporan.csv');
+    Route::get('laporan/{jenis}', [ReportController::class, 'show'])->name('laporan.show');
+    Route::get('pengaturan', [SettingController::class, 'index'])->name('pengaturan');
+    Route::post('pengaturan/tipe-kamar', [SettingController::class, 'simpanTipe'])->name('pengaturan.tipe.simpan');
+    Route::put('pengaturan/tipe-kamar/{tipe}', [SettingController::class, 'updateTipe'])->name('pengaturan.tipe.update');
+    Route::delete('pengaturan/tipe-kamar/{tipe}', [SettingController::class, 'hapusTipe'])->name('pengaturan.tipe.hapus');
+    Route::post('pengaturan/gedung', [SettingController::class, 'simpanGedung'])->name('pengaturan.gedung.simpan');
+    Route::put('pengaturan/gedung/{gedung}', [SettingController::class, 'updateGedung'])->name('pengaturan.gedung.update');
+    Route::delete('pengaturan/gedung/{gedung}', [SettingController::class, 'hapusGedung'])->name('pengaturan.gedung.hapus');
+    Route::post('pengaturan/kategori', [SettingController::class, 'simpanKategori'])->name('pengaturan.kategori.simpan');
+    Route::put('pengaturan/kategori/{category}', [SettingController::class, 'updateKategori'])->name('pengaturan.kategori.update');
+    Route::delete('pengaturan/kategori/{category}', [SettingController::class, 'hapusKategori'])->name('pengaturan.kategori.hapus');
+    Route::post('pengaturan/umum', [SettingController::class, 'simpanUmum'])->name('pengaturan.umum');
+    Route::post('pengaturan/backup', [SettingController::class, 'backupDatabase'])->name('pengaturan.backup');
+    Route::get('pengaturan/backup/{file}', [SettingController::class, 'downloadBackup'])->where('file', '[A-Za-z0-9_\-]+\.sql')->name('pengaturan.backup.download');
+    Route::delete('pengaturan/backup/{file}', [SettingController::class, 'hapusBackup'])->where('file', '[A-Za-z0-9_\-]+\.sql')->name('pengaturan.backup.hapus');
+});
+

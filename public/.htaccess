@@ -1,0 +1,43 @@
+<IfModule mod_rewrite.c>
+    <IfModule mod_negotiation.c>
+        Options -MultiViews -Indexes
+    </IfModule>
+
+    # ---------- Keamanan: blokir file sensitif & path pemindai ----------
+    # (Backup .sql diunduh lewat controller PHP — tetap jalan; ini hanya memblokir
+    #  akses file statis langsung dari web.)
+    <IfModule mod_authz_core.c>
+        # Apache 2.4+
+        <FilesMatch "^(\.env|\.env\..*|\.user\.ini|\.git.*|composer\.(json|lock)|package(-lock)?\.json|phpunit\.xml|.*\.(sql|log|md|yml|yaml|bak|ini))$">
+            Require all denied
+        </FilesMatch>
+        # Path pemindai/vuln scanner umum (WP, xmlrpc, dll.)
+        <FilesMatch "^(wp-login\.php|wp-admin|wp-config\.php|xmlrpc\.php|phpmyadmin|pma|adminer\.php|\.well-known/security\.txt)$">
+            Require all denied
+        </FilesMatch>
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        # Apache 2.2
+        <FilesMatch "^(\.env|\.env\..*|\.user\.ini|\.git.*|composer\.(json|lock)|.*\.(sql|log|bak|ini))$">
+            Order allow,deny
+            Deny from all
+        </FilesMatch>
+    </IfModule>
+    # ---------- / Keamanan ----------
+
+    RewriteEngine On
+
+    # Handle Authorization Header
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    # Redirect Trailing Slashes If Not A Folder...
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_URI} (.+)/$
+    RewriteRule ^ %1 [L,R=301]
+
+    # Send Requests To Front Controller...
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^ index.php [L]
+</IfModule>
