@@ -1,0 +1,21 @@
+﻿services:
+  - type: web
+    name: cendana
+    env: php
+    buildCommand: 'composer install --optimize-autoloader --no-dev && npm install && npm run build'
+    startCommand: 'vendor/bin/heroku-php-apache2 public/'
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+      - key: APP_KEY
+        value: base64:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+      - key: APP_URL
+        value: https://cendana.onrender.com
+      - key: DB_CONNECTION
+        value: mysql
+      - key: CACHE_DRIVER
+        value: database
+      - key: SESSION_DRIVER
+        value: database
